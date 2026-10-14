@@ -33,6 +33,11 @@
   .topbar .meta { display:flex; gap:14px; flex-wrap:wrap; color:var(--muted); font-size:12px; }
   .topbar .meta b { color:var(--text); font-weight:600; }
   .spacer { flex:1; }
+  .stats { display:flex; gap:14px; align-items:center; }
+  .tcell { text-align:center; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; line-height:1.2; }
+  .tcell b { display:block; font-size:17px; color:var(--text); }
+  .tcell input { display:block; margin:0 auto 1px; width:46px; padding:1px 2px; text-align:center; font-size:15px; font-weight:700; }
+  .tnote { font-size:11px; max-width:320px; line-height:1.3; }
   .layout { display:grid; grid-template-columns:1fr 340px; gap:14px; padding:14px 16px; align-items:start; }
   @media (max-width:1000px){ .layout { grid-template-columns:1fr; } }
   .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:14px; }
@@ -145,9 +150,6 @@
   .setup-wrap { max-width:560px; margin:40px auto; }
   .setup-wrap textarea { min-height:200px; font-family:ui-monospace,Menlo,Consolas,monospace; }
   .hintbar { font-size:11px; color:var(--muted); padding:0 16px 14px; }
-  .statgrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  .statgrid .cell { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:8px; text-align:center; font-size:12px; }
-  .statgrid .cell b { font-size:16px; }
   .danger-text { color:var(--warn); font-weight:700; }
   .ok-text { color:var(--ok); font-weight:700; }
   #guideOverlay { position:fixed; inset:0; z-index:200; display:none; }
@@ -246,6 +248,13 @@
       <div>Role: <b id="hdr-role"></b></div>
       <div>Date: <b id="hdr-date"></b></div>
     </div>
+    <div class="stats" id="topStats">
+      <div class="tcell"><b id="st-alive">0</b>alive</div>
+      <div class="tcell"><b id="st-dead">0</b>dead</div>
+      <div class="tcell"><b id="st-maj">0</b>to lynch</div>
+      <div class="tcell"><input id="st-mafia" type="number" min="0" onchange="saveSilent()"><span id="mafkp">mafia left</span></div>
+      <div id="parityNote" class="tnote"></div>
+    </div>
     <div class="spacer"></div>
     <button onclick="startGuide()" title="Guided tour of each area">&#10067; Guide</button>
     <span id="guideExportWrap">
@@ -330,15 +339,8 @@
         <textarea id="evalNotes" rows="6" placeholder="Town core / mafia reads / unsolved..." oninput="state.eval=this.value; save();"></textarea>
       </div>
       <div class="panel">
-        <h2>Game State</h2>
-        <div class="statgrid">
-          <div class="cell"><b id="st-alive">0</b><br>alive</div>
-          <div class="cell"><b id="st-dead">0</b><br>dead</div>
-          <div class="cell"><b id="st-maj">0</b><br>majority to lynch</div>
-          <div class="cell"><b><input id="st-mafia" type="number" min="0" style="width:46px;text-align:center;" onchange="saveSilent()"></b><br><span class="small" id="mafkp">mafia left</span></div>
-        </div>
-        <div id="parityNote" class="center" style="margin-top:10px;"></div>
-        <div style="margin-top:12px; display:flex; flex-direction:column; align-items:center; gap:7px;">
+        <h2>Me</h2>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:7px;">
           <label class="fld" style="align-items:center;">I am
             <select id="meSelect" onchange="setMe(this.value)"></select>
           </label>
@@ -984,9 +986,9 @@ function updateState(){
   state.mafiaLeft = parseInt(document.getElementById("st-mafia").value)||0;
   var m=state.mafiaLeft, town=alive-m, K=kpFor(m);
   state.mafiaKP = K;
-  var lbl=document.getElementById("mafkp"); if(lbl) lbl.innerHTML="mafia left \u00b7 <b>KP "+K+"</b>";
+  var lbl=document.getElementById("mafkp"); if(lbl) lbl.textContent="mafia left \u00b7 KP "+K;
   var note=document.getElementById("parityNote");
-  if (m<=0) note.innerHTML="<span class='ok-text'>No mafia left — town wins.</span>";
+  if (m<=0) note.innerHTML="<span class='ok-text'>No mafia left, town wins.</span>";
   else if (m>=town) note.innerHTML="<span class='danger-text'>MAFIA WIN — at parity ("+m+" vs "+town+").</span>";
   else {
     var kNow=K, kAfter=kpFor(m-1);
@@ -1136,7 +1138,8 @@ var GUIDE = [
  {sel:"#voterGrid", panel:true, title:"Vote Tracker", body:"Pick Type, target (any player, yourself, or SLEEP = no-lynch) and Day - it defaults to the current day. Click a name to cycle voted \u2192 late (voted after time, doesn\u2019t count) \u2192 no, or hit \"From screenshot\" to paste a Zoom grab (zoom in, scroll) and click everyone with a hand up. Majority updates live and a vote hitting it auto-lynches. The log shows each voter's current alignment as a colored chip; the pencil edits a past vote - even keeping players who have since died."},
  {sel:"#dayTabs", panel:true, title:"Day Notes", body:"One notes area per day. \"Compile + Day\" folds each player's read + note and that day's votes into the day log, then opens the next day - your reads carry forward and notes stay put."},
  {sel:"#evalNotes", panel:true, title:"Running Eval", body:"Free space for your overall reads and theories across the whole game. Tip: click any panel's header to collapse it."},
- {sel:".statgrid", panel:true, title:"Game State", body:"Live alive / dead counts and the majority-to-lynch number. Set mafia-left and KP/night for a parity warning that flags LYLO / MYLO in red. Use \"I am\" to pick your nickname (you drop off the reads grid but still vote by name) and \"My role\" to set your role - the role panels below adapt to it."},
+ {sel:"#topStats", title:"Game State", body:"Live alive / dead counts and the majority-to-lynch number. Type mafia-left and the KP and a parity warning appear next to it, flagging LYLO / MYLO in red."},
+ {sel:"#meSelect", panel:true, title:"Me", body:"Use \"I am\" to pick your nickname (you drop off the reads grid but still vote by name, shown as locked town) and \"My role\" to set your role - the role panels below adapt to it."},
  {sel:"#rolesPanel", title:"Roles & Claims", body:"Track who claimed each role, any counter-claim (from the alive players), and a free notes line for what the role does. Standard games pre-fill Cop/Medic/Vig; Custom starts empty - add your own with \"+ role\"."},
  {sel:"#linksPanel", title:"Links", body:"Group players you think are a team, or mark two who can\u2019t both be scum. Shows on the hover card and drives \u201cSort: links\u201d in the roster."},
  {sel:"#nightLog", panel:true, title:"Night / Kill Log", body:"Each night has a number (starts at N0) and as many kill slots as you need - pick victims from the alive list and they're marked dead automatically."},
