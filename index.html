@@ -39,9 +39,12 @@
   .topbar button { padding:4px 9px; font-size:12px; white-space:nowrap; }
   .spacer { flex:1; }
   .stats { display:flex; gap:10px; align-items:center; }
-  .tcell { text-align:center; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; line-height:1.2; }
-  .tcell b { display:block; font-size:17px; color:var(--text); }
-  .tcell input { display:block; margin:0 auto 1px; width:46px; padding:1px 2px; text-align:center; font-size:15px; font-weight:700; }
+  .tcell { display:flex; flex-direction:column; align-items:center; line-height:1.2; }
+  .tcell .tl { font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
+  .tcell b { font-size:17px; color:var(--accent); font-weight:600; }
+  .tcell b.town { color:var(--town-hard); }
+  .tcell input { width:42px; padding:0 2px; text-align:center; font-size:16px; font-weight:600; color:var(--mafia-hard); background:transparent; border-color:transparent; }
+  .tcell input:hover, .tcell input:focus { border-color:var(--border); }
   .tnote { font-size:11px; max-width:200px; line-height:1.25; }
   .layout { display:grid; grid-template-columns:1fr 340px; gap:14px; padding:14px 16px; align-items:start; }
   @media (max-width:1000px){ .layout { grid-template-columns:1fr; } }
@@ -253,22 +256,25 @@
     <div class="sep"></div>
     <label class="tlab">I am <select id="meSelect" onchange="setMe(this.value)"></select></label>
     <label class="tlab">role <span id="gsRoleWrap"></span></label>
-    <span id="meStatus" class="tlab"></span>
     <div class="sep"></div>
     <div class="stats" id="topStats">
-      <div class="tcell"><b id="st-alive">0</b>alive</div>
-      <div class="tcell"><b id="st-dead">0</b>dead</div>
-      <div class="tcell"><b id="st-maj">0</b>to lynch</div>
-      <div class="tcell"><input id="st-mafia" type="number" min="0" onchange="saveSilent()"><span id="mafkp">mafia left</span></div>
+      <div class="tcell"><span class="tl">Day</span><b id="st-day">1</b></div>
+      <div class="tcell"><span class="tl">Alive</span><b id="st-alive">0</b></div>
+      <div class="tcell"><span class="tl">Dead</span><b id="st-dead">0</b></div>
+      <div class="tcell"><span class="tl">Lynch</span><b id="st-maj">0</b></div>
+      <div class="tcell"><span class="tl">Town</span><b id="st-town" class="town">0</b></div>
+      <div class="tcell"><span class="tl">Mafia</span><input id="st-mafia" type="number" min="0" onchange="saveSilent()" title="mafia left, type it"></div>
+      <div class="tcell"><span class="tl">KP</span><b id="st-kp">1</b></div>
       <div id="parityNote" class="tnote"></div>
     </div>
     <div class="spacer"></div>
     <button onclick="startGuide()" title="Guided tour of each area">&#10067; Guide</button>
-    <span id="guideExportWrap">
-      <button onclick="exportNotes('md')" title="Export as Markdown">.md</button>
-      <button onclick="exportNotes('txt')" title="Export as plain text">.txt</button>
-      <button onclick="copyNotes()" title="Copy Markdown to clipboard">Copy</button>
-    </span>
+    <select id="guideExportWrap" onchange="exportMenu(this)" style="padding:4px 6px;font-size:12px;">
+      <option value="">Export &#9662;</option>
+      <option value="md">Markdown (.md)</option>
+      <option value="txt">Plain text (.txt)</option>
+      <option value="copy">Copy Markdown</option>
+    </select>
     <button class="danger" onclick="newGame()">New game</button>
   </div>
 
@@ -980,7 +986,9 @@ function updateState(){
   state.mafiaLeft = parseInt(document.getElementById("st-mafia").value)||0;
   var m=state.mafiaLeft, town=alive-m, K=kpFor(m);
   state.mafiaKP = K;
-  var lbl=document.getElementById("mafkp"); if(lbl) lbl.textContent="mafia left \u00b7 KP "+K;
+  document.getElementById("st-kp").textContent = K;
+  document.getElementById("st-town").textContent = Math.max(0, town);
+  document.getElementById("st-day").textContent = curDay();
   var note=document.getElementById("parityNote");
   if (m<=0) note.innerHTML="<span class='ok-text'>No mafia left, town wins.</span>";
   else if (m>=town) note.innerHTML="<span class='danger-text'>MAFIA WIN: parity ("+m+"v"+town+").</span>";
@@ -995,10 +1003,6 @@ function updateState(){
     else { var af=affordMislynch(town,m); note.innerHTML="<span class='small'>"+m+" maf vs "+town+" town, KP "+kNow+", <b>"+af+"</b> mislynch"+(af===1?"":"es")+" spare.</span>"; }
   }
   var l3=document.getElementById("leg3p"); if(l3) l3.classList.toggle("hide", !state.custom);
-  var sp=selfPlayer();
-  var sAlive = sp ? (sp.deadDay===null) : (state.me.deadDay===null);
-  var dInfo = sp ? esc(sp.deadDay+" "+sp.deadType) : esc(state.me.deadDay+" "+state.me.deadType);
-  document.getElementById("meStatus").innerHTML = sAlive ? "<span class='ok-text'>alive</span>" : "<span class='danger-text'>dead "+dInfo+"</span>";
   var msel=document.getElementById("meSelect");
   if(msel) msel.innerHTML="<option value=''>— not in roster —</option>"+state.players.map(function(p){return "<option value='"+p.id+"'"+(state.meId===p.id?" selected":"")+">"+esc(p.name)+"</option>";}).join("");
 }
@@ -1114,6 +1118,7 @@ function downloadFile(content,fname){
   var a=document.createElement("a"); a.href=url; a.download=fname; a.click();
   URL.revokeObjectURL(url);
 }
+function exportMenu(s){ var v=s.value; s.value=""; if(v==="copy") copyNotes(); else if(v) exportNotes(v); }
 function copyNotes(){
   var md=buildMarkdown();
   if (navigator.clipboard && navigator.clipboard.writeText)
@@ -1131,8 +1136,8 @@ var GUIDE = [
  {sel:"#voterGrid", panel:true, title:"Vote Tracker", body:"Pick Type, target (any player, yourself, or SLEEP = no-lynch) and Day - it defaults to the current day. Click a name to cycle voted \u2192 late (voted after time, doesn\u2019t count) \u2192 no, or hit \"From screenshot\" to paste a Zoom grab (zoom in, scroll) and click everyone with a hand up (click twice for a late vote). Majority updates live and a vote hitting it auto-lynches. The log shows each voter's current alignment as a colored chip; the pencil edits a past vote - even keeping players who have since died."},
  {sel:"#dayTabs", panel:true, title:"Day Notes", body:"One notes area per day. \"Compile + Day\" folds each player's read + note and that day's votes into the day log, then opens the next day - your reads carry forward and notes stay put."},
  {sel:"#evalNotes", panel:true, title:"Running Eval", body:"Free space for your overall reads and theories across the whole game. Tip: click any panel's header to collapse it."},
- {sel:"#topStats", title:"Game State", body:"Live alive / dead counts and the majority-to-lynch number. Type mafia-left and the KP and a parity warning appear next to it, flagging LYLO / MYLO in red."},
- {sel:"#meSelect", title:"Me", body:"Use \"I am\" to pick your nickname (you drop off the reads grid but still vote by name, shown as locked town) and \"My role\" to set your role - the role panels below adapt to it."},
+ {sel:"#topStats", title:"Game State", body:"Day, alive / dead, majority-to-lynch and town count. Type the mafia left and the KP and a parity warning appear next to it, flagging LYLO / MYLO in red."},
+ {sel:"#meSelect", title:"Me", body:"Use \"I am\" to pick your nickname (you drop off the reads grid but still vote by name, shown as locked town) and \"role\" to set your role - the role panels adapt to it."},
  {sel:"#rolesPanel", title:"Roles & Claims", body:"Track who claimed each role, any counter-claim (from the alive players), and a free notes line for what the role does. Standard games pre-fill Cop/Medic/Vig; Custom starts empty - add your own with \"+ role\"."},
  {sel:"#linksPanel", title:"Links", body:"Group players you think are a team, or mark two who can\u2019t both be scum. They show up as With / Against columns in the roster (and on the hover card), and drive \u201cSort: links\u201d."},
  {sel:"#nightLog", panel:true, title:"Night / Kill Log", body:"Each night has a number (starts at N0) and as many kill slots as you need - pick victims from the alive list and they're marked dead automatically."},
@@ -1140,7 +1145,7 @@ var GUIDE = [
  {sel:"#medicPanel", title:"Medic Saves", body:"Shows when your role is Medic. Log who you saved each night."},
  {sel:"#vigPanel", title:"Vigilante Shots", body:"Shows when your role is Vigilante. Log your shot(s) and the result; add more with + Shot for multi-shot games."},
  {sel:"#mafiaPanel", title:"Mafia Team", body:"Shows when your role is Mafia. Add partners with + Partner - they get a red M before their name in the roster."},
- {sel:"#guideExportWrap", title:"Export & Save", body:"Export the whole game to Markdown or TXT (save dialog, download, or copy to clipboard). Everything autosaves to this browser automatically as you play."}
+ {sel:"#guideExportWrap", title:"Export & Save", body:"Export the whole game to Markdown or TXT, or copy the Markdown to the clipboard, from this menu. Everything autosaves to this browser automatically as you play."}
 ];
 var guideI = 0;
 function guideEl(st){ var el=document.querySelector(st.sel); if(el && st.panel) el=el.closest(".panel"); return el; }
