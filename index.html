@@ -41,7 +41,7 @@
   table.grid th, table.grid td { border:1px solid var(--border); padding:0; text-align:center; }
   table.grid th { background:var(--panel2); color:var(--muted); font-weight:600; font-size:11px; padding:5px 6px; }
   table.grid th.name-col, table.grid td.name-col { text-align:left; padding:3px 6px; }
-  table.grid td.name-col { min-width:72px; max-width:110px; }
+  table.grid th.name-col, table.grid td.name-col, table.grid td.lnk-col { width:1%; white-space:nowrap; }
   table.grid th.note-col, table.grid td.note-col { text-align:left; min-width:140px; }
   table.grid tr.dead td.name-col input { color:var(--warn); }
   table.grid tr.dead td.statuscell { color:var(--warn); font-weight:700; }
@@ -60,8 +60,9 @@
   .r-TP { background:var(--tp); color:#fff; }
   .mteam { display:inline-block; background:var(--mafia-hard); color:#2a0606; font-weight:700; font-size:10px; padding:0 4px; border-radius:3px; margin-right:3px; }
   .namewrap { display:flex; align-items:center; }
-  .lpin { font-size:10px; margin-right:3px; cursor:help; opacity:.85; }
-  .name-col input { flex:1; min-width:0; width:auto; border:none; background:transparent; padding:2px 0; font-size:13px; }
+  table.grid td.lnk-col { text-align:left; font-size:11px; padding:2px 6px; color:var(--muted); white-space:nowrap; }
+  table.grid td.lnk-col.against { color:var(--mafia-hard); }
+  .name-col input { width:112px; border:none; background:transparent; padding:2px 0; font-size:13px; }
   .name-col input:focus { background:var(--bg); }
   .note-col input { width:100%; border:none; background:transparent; padding:4px 2px; }
   .note-col input:focus { background:var(--bg); }
@@ -637,17 +638,16 @@ function normalizeReads(){
   });
   if(changed) save();
 }
-function linkPin(name){
-  var w=[], a=[];
-  state.links.forEach(function(l){ if(l.names.indexOf(name)<0) return; var o=l.names.filter(function(n){return n!==name;}); (l.kind==="apart"?a:w).push.apply(l.kind==="apart"?a:w, o); });
-  if(!w.length && !a.length) return "";
-  var t=(w.length?"with: "+w.join(", "):"")+(w.length&&a.length?"\n":"")+(a.length?"against: "+a.join(", "):"");
-  return "<span class='lpin' title='"+esc(t)+"'>\ud83d\udccc</span>";
+function linkedTo(name, kind){
+  var out=[];
+  state.links.forEach(function(l){ if(l.kind===kind && l.names.indexOf(name)>=0) l.names.forEach(function(n){ if(n!==name && out.indexOf(n)<0) out.push(n); }); });
+  return out;
 }
 function renderRoster(){
   normalizeReads();
   var t = document.getElementById("rosterTable");
-  var html = "<thead><tr><th class='name-col'>Player</th>";
+  var lk = state.links.length>0;
+  var html = "<thead><tr><th class='name-col'>Player</th>"+(lk?"<th>With</th><th>Against</th>":"");
   state.days.forEach(function(d){ html += "<th>D"+d+"</th>"; });
   html += "<th class='note-col'>Notes</th><th>Status</th></tr></thead><tbody>";
   var isMaf = /mafia|scum/.test((state.meta.role||"").toLowerCase());
@@ -655,9 +655,10 @@ function renderRoster(){
   var sepDone = false;
   orderedPlayers().forEach(function(p){
     var dead = p.deadDay!==null;
-    if (dead && !sepDone){ html += "<tr class='deadsep'><td colspan='"+(state.days.length+3)+"'>☠ DEAD ☠</td></tr>"; sepDone = true; }
+    if (dead && !sepDone){ html += "<tr class='deadsep'><td colspan='"+(state.days.length+(lk?5:3))+"'>☠ DEAD ☠</td></tr>"; sepDone = true; }
     html += "<tr data-pname='"+esc(p.name)+"' class='"+(dead?"dead":"")+"'>";
-    html += "<td class='name-col' onmouseenter='showHover(event,"+p.id+")' onmouseleave='hideHover()'><div class='namewrap'>"+((isMaf && mafiaSet.indexOf(p.name)>=0)?"<span class='mteam'>M</span> ":"")+linkPin(p.name)+"<input value='"+esc(p.name)+"' title='click to highlight \u00b7 hover for details' onclick='toggleHighlightById("+p.id+")' onchange='renamePlayer("+p.id+",this.value)'></div></td>";
+    html += "<td class='name-col' onmouseenter='showHover(event,"+p.id+")' onmouseleave='hideHover()'><div class='namewrap'>"+((isMaf && mafiaSet.indexOf(p.name)>=0)?"<span class='mteam'>M</span> ":"")+"<input value='"+esc(p.name)+"' title='click to highlight \u00b7 hover for details' onclick='toggleHighlightById("+p.id+")' onchange='renamePlayer("+p.id+",this.value)'></div></td>";
+    if (lk) html += "<td class='lnk-col'>"+(linkedTo(p.name,"team").map(esc).join(", ")||"")+"</td><td class='lnk-col against'>"+(linkedTo(p.name,"apart").map(esc).join(", ")||"")+"</td>";
     state.days.forEach(function(d){
       var r = p.reads[d]||"?";
       html += "<td class='read'><select class='rsel "+READ_CLASS[r]+"' onchange='setRead("+p.id+","+d+",this.value)'>";
@@ -1031,10 +1032,11 @@ function buildMarkdown(){
   s+="- **Date:** "+(m.date||"—")+"\n- **My role:** "+(m.role||"—")+"\n";
   s+="- **Me:** "+(meAlive()?"alive":"dead ("+state.me.deadDay+" "+state.me.deadType+")")+"\n\n";
 
-  s+="## Roster & Reads\n\n| Player |"+state.days.map(function(d){return " D"+d+" |";}).join("")+" Status | Notes |\n";
-  s+="|---|"+state.days.map(function(){return "---|";}).join("")+"---|---|\n";
+  var lk = state.links.length>0;
+  s+="## Roster & Reads\n\n| Player |"+(lk?" With | Against |":"")+state.days.map(function(d){return " D"+d+" |";}).join("")+" Status | Notes |\n";
+  s+="|---|"+(lk?"---|---|":"")+state.days.map(function(){return "---|";}).join("")+"---|---|\n";
   orderedPlayers().forEach(function(p){
-    s+="| "+p.name+" |";
+    s+="| "+p.name+" |"+(lk?" "+(linkedTo(p.name,"team").join(", ")||"—")+" | "+(linkedTo(p.name,"apart").join(", ")||"—")+" |":"");
     state.days.forEach(function(d){ s+=" "+(p.reads[d]||"·")+" |"; });
     s+=" "+(p.deadDay!==null?"✝ "+p.deadDay+" "+p.deadType:"alive")+" |";
     s+=" "+(p.note||"")+" |\n";
