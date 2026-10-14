@@ -28,16 +28,21 @@
     border-radius:6px; padding:6px 8px; font-size:13px; font-family:inherit; }
   textarea { width:100%; resize:vertical; }
   input:focus, select:focus, textarea:focus { outline:none; border-color:var(--accent); }
-  .topbar { display:flex; align-items:center; gap:14px; padding:10px 16px;
+  .topbar { display:flex; align-items:center; gap:10px; padding:6px 14px;
     background:var(--panel); border-bottom:1px solid var(--border); flex-wrap:wrap; }
-  .topbar .meta { display:flex; gap:14px; flex-wrap:wrap; color:var(--muted); font-size:12px; }
+  .topbar h1 { white-space:nowrap; }
+  .topbar .meta { color:var(--muted); font-size:11px; white-space:nowrap; }
   .topbar .meta b { color:var(--text); font-weight:600; }
+  .tlab { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--muted); white-space:nowrap; }
+  .tlab select, .tlab input { padding:3px 5px; font-size:12px; max-width:118px; }
+  .topbar .sep { width:1px; height:28px; background:var(--border); }
+  .topbar button { padding:4px 9px; font-size:12px; white-space:nowrap; }
   .spacer { flex:1; }
-  .stats { display:flex; gap:14px; align-items:center; }
+  .stats { display:flex; gap:10px; align-items:center; }
   .tcell { text-align:center; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; line-height:1.2; }
   .tcell b { display:block; font-size:17px; color:var(--text); }
   .tcell input { display:block; margin:0 auto 1px; width:46px; padding:1px 2px; text-align:center; font-size:15px; font-weight:700; }
-  .tnote { font-size:11px; max-width:320px; line-height:1.3; }
+  .tnote { font-size:11px; max-width:200px; line-height:1.25; }
   .layout { display:grid; grid-template-columns:1fr 340px; gap:14px; padding:14px 16px; align-items:start; }
   @media (max-width:1000px){ .layout { grid-template-columns:1fr; } }
   .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:14px; }
@@ -244,14 +249,12 @@
 <div id="app" class="hide">
   <div class="topbar">
     <h1>&#127914; <span id="hdr-game"></span></h1>
-    <div class="meta">
-      <div>Date: <b id="hdr-date"></b></div>
-    </div>
-    <div class="row" style="gap:10px;">
-      <label class="fld">I am <select id="meSelect" onchange="setMe(this.value)"></select></label>
-      <label class="fld">My role <span id="gsRoleWrap"></span></label>
-      <span id="meStatus" class="small"></span>
-    </div>
+    <div class="meta"><b id="hdr-date"></b></div>
+    <div class="sep"></div>
+    <label class="tlab">I am <select id="meSelect" onchange="setMe(this.value)"></select></label>
+    <label class="tlab">role <span id="gsRoleWrap"></span></label>
+    <span id="meStatus" class="tlab"></span>
+    <div class="sep"></div>
     <div class="stats" id="topStats">
       <div class="tcell"><b id="st-alive">0</b>alive</div>
       <div class="tcell"><b id="st-dead">0</b>dead</div>
@@ -262,9 +265,9 @@
     <div class="spacer"></div>
     <button onclick="startGuide()" title="Guided tour of each area">&#10067; Guide</button>
     <span id="guideExportWrap">
-      <button onclick="exportNotes('md')">Export .md</button>
-      <button onclick="exportNotes('txt')">Export .txt</button>
-      <button onclick="copyNotes()">Copy</button>
+      <button onclick="exportNotes('md')" title="Export as Markdown">.md</button>
+      <button onclick="exportNotes('txt')" title="Export as plain text">.txt</button>
+      <button onclick="copyNotes()" title="Copy Markdown to clipboard">Copy</button>
     </span>
     <button class="danger" onclick="newGame()">New game</button>
   </div>
@@ -980,23 +983,22 @@ function updateState(){
   var lbl=document.getElementById("mafkp"); if(lbl) lbl.textContent="mafia left \u00b7 KP "+K;
   var note=document.getElementById("parityNote");
   if (m<=0) note.innerHTML="<span class='ok-text'>No mafia left, town wins.</span>";
-  else if (m>=town) note.innerHTML="<span class='danger-text'>MAFIA WIN — at parity ("+m+" vs "+town+").</span>";
+  else if (m>=town) note.innerHTML="<span class='danger-text'>MAFIA WIN: parity ("+m+"v"+town+").</span>";
   else {
     var kNow=K, kAfter=kpFor(m-1);
     var lossImm = (m-1>0) && ((m-1) >= town-kAfter);
     var noLynch = m >= town-kNow;
     var misLynch = m >= town-1-kNow;
-    if (lossImm) note.innerHTML="<span class='danger-text'>LOSS IMMINENT — even lynching a mafia they reach parity ("+m+" vs "+town+", KP "+kNow+"\u2192"+kAfter+").</span>";
-    else if (noLynch) note.innerHTML="<span class='danger-text'>LYLO — must lynch a mafia today; a no-lynch loses ("+m+" vs "+town+", KP "+kNow+").</span>";
-    else if (misLynch) note.innerHTML="<span class='danger-text'>MYLO — a mislynch loses; town must lynch scum ("+m+" vs "+town+", KP "+kNow+").</span>";
-    else { var af=affordMislynch(town,m); note.innerHTML="<span class='small'>Mafia "+m+" vs town "+town+" (KP "+kNow+") — town can afford <b>"+af+"</b> mislynch"+(af===1?"":"es")+".</span>"; }
+    if (lossImm) note.innerHTML="<span class='danger-text'>LOSS IMMINENT: even a mafia lynch hits parity ("+m+"v"+town+", KP "+kNow+"\u2192"+kAfter+").</span>";
+    else if (noLynch) note.innerHTML="<span class='danger-text'>LYLO: a no-lynch loses ("+m+"v"+town+", KP "+kNow+").</span>";
+    else if (misLynch) note.innerHTML="<span class='danger-text'>MYLO: a mislynch loses ("+m+"v"+town+", KP "+kNow+").</span>";
+    else { var af=affordMislynch(town,m); note.innerHTML="<span class='small'>"+m+" maf vs "+town+" town, KP "+kNow+", <b>"+af+"</b> mislynch"+(af===1?"":"es")+" spare.</span>"; }
   }
   var l3=document.getElementById("leg3p"); if(l3) l3.classList.toggle("hide", !state.custom);
   var sp=selfPlayer();
   var sAlive = sp ? (sp.deadDay===null) : (state.me.deadDay===null);
-  var sName = sp ? esc(sp.name) : "You";
   var dInfo = sp ? esc(sp.deadDay+" "+sp.deadType) : esc(state.me.deadDay+" "+state.me.deadType);
-  document.getElementById("meStatus").innerHTML = sAlive ? (sName+": <span class='ok-text'>alive</span>") : (sName+": <span class='danger-text'>dead ("+dInfo+")</span>");
+  document.getElementById("meStatus").innerHTML = sAlive ? "<span class='ok-text'>alive</span>" : "<span class='danger-text'>dead "+dInfo+"</span>";
   var msel=document.getElementById("meSelect");
   if(msel) msel.innerHTML="<option value=''>— not in roster —</option>"+state.players.map(function(p){return "<option value='"+p.id+"'"+(state.meId===p.id?" selected":"")+">"+esc(p.name)+"</option>";}).join("");
 }
@@ -1236,9 +1238,9 @@ function kpFor(mm){ return mm>=3 ? 2 : 1; }
 function affordMislynch(town,m){ var t=town,c=0,g=300; while(g-->0){ var k=kpFor(m); if(m >= t-1-k) break; t=t-1-k; c++; } return c; }
 function roleControl(idAttr, val, custom){
   var on = idAttr==="gs-role" ? " onchange='setMyRole(this.value)'" : "";
-  if(custom){ return "<input id='"+idAttr+"' list='role-opts' value='"+esc(val||"")+"' placeholder='role' autocomplete='off'"+on+" style='min-width:150px;'>"; }
+  if(custom){ return "<input id='"+idAttr+"' list='role-opts' value='"+esc(val||"")+"' placeholder='role' autocomplete='off'"+on+" style='min-width:118px;'>"; }
   var opts=[""].concat(STD_ROLES);
-  return "<select id='"+idAttr+"'"+on+" style='min-width:150px;'>"+opts.map(function(o){return "<option value=\""+esc(o)+"\""+(o===(val||"")?" selected":"")+">"+(o?esc(o):"\u2014")+"</option>";}).join("")+"</select>";
+  return "<select id='"+idAttr+"'"+on+" style='min-width:118px;'>"+opts.map(function(o){return "<option value=\""+esc(o)+"\""+(o===(val||"")?" selected":"")+">"+(o?esc(o):"\u2014")+"</option>";}).join("")+"</select>";
 }
 function renderRoleControl(){ var w=document.getElementById("gsRoleWrap"); if(w) w.innerHTML=roleControl("gs-role", state.meta.role, state.custom); }
 function setMyRole(v){ state.meta.role=v.trim(); var g=document.getElementById("gs-role"); if(g) g.value=state.meta.role; save(); updateRolePanels(); renderRoster(); renderMafia(); }
