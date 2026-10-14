@@ -184,6 +184,7 @@
   .vchip { padding:6px 11px; border:1px solid var(--border); border-radius:20px; cursor:pointer; user-select:none; font-size:13px; }
   .vchip:hover { border-color:var(--accent); }
   .vchip.on { background:var(--ok); border-color:var(--ok); color:#06210f; font-weight:700; }
+  .vchip.late { background:var(--neutral); border-color:var(--neutral); color:#1f1607; font-weight:700; }
 </style>
 </head>
 <body>
@@ -429,7 +430,7 @@
         <div id="vidrop" class="vidrop">Paste a screenshot here (Ctrl/Cmd+V)<br><span class="small">or pick a file:</span><br><input type="file" accept="image/*" onchange="viFile(event)" style="margin-top:6px;"></div>
         <img id="viimg" class="hide" alt="pasted screenshot">
       </div>
-      <div class="small" style="margin:10px 0 6px;">Tap everyone with a hand up:</div>
+      <div class="small" style="margin:10px 0 6px;">Tap everyone with a hand up (tap again for a late vote, again to clear):</div>
       <div id="vcChips" class="vcchips"></div>
       <div class="row" style="justify-content:space-between; margin-top:12px;">
         <div class="small" id="vcCount"></div>
@@ -1184,7 +1185,7 @@ document.addEventListener("click", function(e){
 var vcSelected = {};
 function openVoteImport(){
   vcSelected = {};
-  participants().forEach(function(n){ if(voteChecks[n]) vcSelected[n]=true; });
+  participants().forEach(function(n){ if(voteChecks[n]) vcSelected[n]=voteChecks[n]; });
   var img=document.getElementById("viimg"); img.classList.add("hide"); img.removeAttribute("src");
   document.getElementById("vidrop").classList.remove("hide");
   renderVcChips();
@@ -1198,12 +1199,13 @@ function closeVoteImport(){
 function renderVcChips(){
   var parts = participants();
   document.getElementById("vcChips").innerHTML = parts.map(function(n){
-    return "<span class='vchip"+(vcSelected[n]?" on":"")+"' onclick='vcToggle(\""+esc(n).replace(/\"/g,"&quot;")+"\")'>"+esc(n)+"</span>";
+    var st=vcSelected[n];
+    return "<span class='vchip"+(st===true?" on":st==="late"?" late":"")+"' onclick='vcToggle(\""+esc(n).replace(/\"/g,"&quot;")+"\")'>"+esc(n)+(st==="late"?" (late)":"")+"</span>";
   }).join("");
-  var c = parts.filter(function(n){return vcSelected[n];}).length;
-  document.getElementById("vcCount").textContent = c+" of "+parts.length+" selected as voters";
+  var c = parts.filter(function(n){return vcSelected[n]===true;}).length, l = parts.filter(function(n){return vcSelected[n]==="late";}).length;
+  document.getElementById("vcCount").textContent = c+" of "+parts.length+" voted"+(l?", "+l+" late":"");
 }
-function vcToggle(n){ vcSelected[n]=!vcSelected[n]; renderVcChips(); }
+function vcToggle(n){ var s=vcSelected[n]; if(s===true) vcSelected[n]="late"; else if(s==="late") delete vcSelected[n]; else vcSelected[n]=true; renderVcChips(); }
 function vcClear(){ vcSelected={}; renderVcChips(); }
 function viPaste(e){
   var items=(e.clipboardData&&e.clipboardData.items)||[];
@@ -1222,7 +1224,7 @@ function viFit(){ var wrap=document.getElementById("viwrap"); var img=document.g
 function viZoom1(){ viZoom=1; applyViZoom(); }
 function viZoomBy(d){ viZoom=Math.max(0.2, Math.min(4, viZoom+d)); applyViZoom(); }
 function applyVoteImport(){
-  participants().forEach(function(n){ voteChecks[n] = !!vcSelected[n]; });
+  voteChecks={}; participants().forEach(function(n){ if(vcSelected[n]) voteChecks[n]=vcSelected[n]; });
   renderVoteUI();
   closeVoteImport();
 }
