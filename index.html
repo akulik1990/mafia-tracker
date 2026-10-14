@@ -83,7 +83,14 @@
   .voter:hover { border-color:var(--accent); }
   .voter.on { background:var(--panel2); border-color:var(--accent); }
   .voter.me { border-style:dashed; }
-  .voter input { pointer-events:none; }
+  .voter.late { border-color:var(--neutral); background:#2a2416; }
+  .vbox { display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border:1px solid var(--border); border-radius:3px; font-size:10px; font-weight:700; flex:none; }
+  .voter.on .vbox { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .voter.late .vbox { background:var(--neutral); border-color:var(--neutral); color:#1f1607; }
+  .lnk { border:1px solid var(--border); border-radius:8px; padding:7px; margin-bottom:7px; background:var(--bg); }
+  .lnk.apart { border-color:var(--mafia-hard); }
+  .lnk select { padding:4px; }
+  .lnknames { margin-top:5px; display:flex; flex-wrap:wrap; gap:3px; }
   .tally { display:flex; gap:18px; flex-wrap:wrap; margin:8px 0; }
   .tally .box { flex:1; min-width:170px; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:8px 10px; }
   .tally .box b { display:block; margin-bottom:4px; }
@@ -158,6 +165,8 @@
   .cmptbl thead th { color:var(--muted); background:var(--panel2); position:sticky; top:0; }
   .cmptbl td.cV { background:var(--town); color:#fff; font-weight:700; }
   .cmptbl td.cN { color:var(--muted); }
+  .cmptbl td.cL { background:var(--neutral); color:#1f1607; font-weight:700; }
+  .cmpl { display:inline-block; background:var(--neutral); color:#1f1607; font-weight:700; border-radius:3px; padding:0 5px; }
   .cmptbl td.cDash { color:var(--null); }
   .cmptbl tr.allV td:first-child { color:var(--ok); font-weight:700; }
   .cmptbl tr.noV { opacity:.62; }
@@ -250,7 +259,7 @@
         <div class="row" style="justify-content:space-between;">
           <h2 style="margin:0;">Roster &amp; Reads</h2>
           <div class="row">
-            <button class="sm" id="sortBtn" onclick="toggleSort()"></button>
+            <select id="sortSel" onchange="setSort(this.value)" title="roster order" style="padding:3px 6px;font-size:12px;"></select>
             <button class="sm" onclick="clearAllNotes()" title="Clear the Notes column for every player">Clear notes</button>
             <button class="sm" onclick="clearCurrentReads()" title="Set all reads for the current day back to ?">Clear reads</button>
             <button class="sm" onclick="addDay()" title="Compile player notes + today's votes into this day, then start the next day">Compile + Day</button>
@@ -288,6 +297,7 @@
         <div class="voter-grid" id="voterGrid"></div>
         <div class="tally">
           <div class="box"><b class="ok-text">Voted (<span id="t-voted-n">0</span>)</b><span id="t-voted" class="small">&mdash;</span></div>
+          <div class="box"><b style="color:var(--neutral);">Late (<span id="t-late-n">0</span>)</b><span id="t-late" class="small">&mdash;</span></div>
           <div class="box"><b>Not voted (<span id="t-novote-n">0</span>)</b><span id="t-novote" class="small">&mdash;</span></div>
         </div>
         <div class="row" style="justify-content:space-between;">
@@ -312,6 +322,10 @@
     </div>
 
     <div class="col-side">
+      <div class="panel">
+        <h2>Running Eval</h2>
+        <textarea id="evalNotes" rows="6" placeholder="Town core / mafia reads / unsolved..." oninput="state.eval=this.value; save();"></textarea>
+      </div>
       <div class="panel">
         <h2>Game State</h2>
         <div class="statgrid">
@@ -338,6 +352,14 @@
           <button class="sm" onclick="addRole()">+ role</button>
         </div>
         <table class="mini" id="rolesTable" style="margin-top:8px;"></table>
+      </div>
+
+      <div class="panel" id="linksPanel">
+        <div class="row" style="justify-content:space-between;">
+          <h2 style="margin:0;">Links</h2>
+          <button class="sm" onclick="addLink()">+ link</button>
+        </div>
+        <div id="linksList" style="margin-top:8px;"></div>
       </div>
 
       <div class="panel">
@@ -374,10 +396,6 @@
         <div id="mafiaTeam" style="margin-top:8px;"></div>
       </div>
 
-      <div class="panel">
-        <h2>Running Eval</h2>
-        <textarea id="evalNotes" rows="6" placeholder="Town core / mafia reads / unsolved..." oninput="state.eval=this.value; save();"></textarea>
-      </div>
     </div>
   </div>
   <div class="hintbar center">Autosaved to this browser. Export to keep a permanent copy in ~/mafia-notes/games/</div>
@@ -388,7 +406,7 @@
         <h2 style="margin:0;">Compare votes</h2>
         <button class="sm" onclick="closeCompare()">&#10005;</button>
       </div>
-      <div class="small" style="margin:6px 0 10px;">Sorted by voting pattern &mdash; voted-all sits in the middle; players who voted only on the left-hand votes group toward the top, only the right-hand votes toward the bottom. <span class="cmpv">V</span> voted &middot; <span class="cmpn">N</span> didn&#39;t &middot; &middot; not in that vote.</div>
+      <div class="small" style="margin:6px 0 10px;">Sorted by voting pattern &mdash; voted-all sits in the middle; players who voted only on the left-hand votes group toward the top, only the right-hand votes toward the bottom. <span class="cmpv">V</span> voted &middot; <span class="cmpl">L</span> late (didn&#39;t count) &middot; <span class="cmpn">N</span> didn&#39;t &middot; &middot; not in that vote.</div>
       <div id="cmpBody" style="overflow:auto; max-height:72vh;"></div>
     </div>
   </div>
@@ -476,6 +494,7 @@ function startGame(){
     medicSaves: [],
     vigShots: [],
     mafiaTeam: [],
+    links: [],
     eval: "",
     sortMode: "read"
   };
@@ -505,6 +524,8 @@ function resumeGame(){
   if (!state.vigShots) state.vigShots=[];
   if (!state.mafiaTeam) state.mafiaTeam=[];
   if (!state.sortMode) state.sortMode="read";
+  if (!state.links) state.links=[];
+  state.votes.forEach(function(v){ if(!v.late) v.late=[]; });
   if (state.nextId==null) state.nextId = state.players.length;
   state.players.forEach(function(p,i){ if(p.id==null) p.id=i; });
   activeDayNotes = state.days[state.days.length-1];
@@ -552,7 +573,7 @@ function participants(){
 function votePanelParticipants(){
   if (editingVote!=null && state.votes[editingVote]){
     var v=state.votes[editingVote];
-    return v.voters.concat(v.nonVoters);
+    return v.voters.concat(v.late||[], v.nonVoters);
   }
   return participants();
 }
@@ -573,22 +594,34 @@ function applyDeath(name, when, type){
   if (p){ p.deadDay=when; p.deadType=type; }
 }
 
+function linkGroup(name){
+  for (var i=0;i<state.links.length;i++) if(state.links[i].names.indexOf(name)>=0) return i;
+  return 1e9;
+}
 function orderedPlayers(){
   var pool = state.players.filter(function(p){ return state.meId==null || p.id!==state.meId; });
   var alive = pool.filter(function(p){return p.deadDay===null;});
   var dead = pool.filter(function(p){return p.deadDay!==null;});
-  if (state.sortMode==="read"){
-    var ld = latestDay();
-    alive = alive.slice().sort(function(a,b){
-      var ra = RANK[a.reads[ld]||"?"], rb = RANK[b.reads[ld]||"?"];
-      return ra-rb;
-    });
-  }
+  var mode = state.sortMode||"read";
+  var day = /^d\d+$/.test(mode) ? parseInt(mode.slice(1)) : latestDay();
+  if (state.days.indexOf(day)<0) day = latestDay();
+  var rank = function(p){ return RANK[p.reads[day]||"?"]; };
+  var cmp = null;
+  if (mode==="name") cmp = function(a,b){ return a.name.localeCompare(b.name); };
+  else if (mode==="links") cmp = function(a,b){ return (linkGroup(a.name)-linkGroup(b.name)) || (rank(a)-rank(b)); };
+  else if (mode!=="entry") cmp = function(a,b){ return rank(a)-rank(b); };
+  if (cmp) alive = alive.slice().sort(cmp);
   return alive.concat(dead);
 }
 
-function toggleSort(){ state.sortMode = state.sortMode==="read" ? "entry" : "read"; save(); renderRoster(); updateSortBtn(); }
-function updateSortBtn(){ document.getElementById("sortBtn").textContent = state.sortMode==="read" ? "Sort: by read" : "Sort: entry"; }
+function setSort(v){ state.sortMode=v; save(); renderRoster(); }
+function updateSortBtn(){
+  var s=document.getElementById("sortSel"); if(!s) return;
+  var opts=[["read","Sort: by read"],["entry","Sort: entry"],["name","Sort: name"]];
+  state.days.forEach(function(d){ opts.push(["d"+d,"Sort: D"+d+" read"]); });
+  opts.push(["links","Sort: links"]);
+  s.innerHTML=opts.map(function(o){ return "<option value='"+o[0]+"'"+(o[0]===state.sortMode?" selected":"")+">"+o[1]+"</option>"; }).join("");
+}
 
 function normalizeReads(){
   var changed=false;
@@ -632,7 +665,24 @@ function renderRoster(){
 }
 
 function setRead(id,d,v){ var p=byId(id); if(p){ p.reads[d]=v; save(); renderRoster(); renderVoteLog(); } }
-function renamePlayer(id,v){ var p=byId(id); if(p){ p.name=v.trim()||p.name; recomputeDeaths(); save(); renderAll(); } }
+function renamePlayer(id,v){
+  var p=byId(id); if(!p) return;
+  var nv=v.trim()||p.name, old=p.name;
+  if(nv!==old){
+    var sw=function(n){ return n===old?nv:n; };
+    state.votes.forEach(function(x){ x.target=sw(x.target); ["voters","nonVoters","late"].forEach(function(k){ if(x[k]) x[k]=x[k].map(sw); }); });
+    state.nights.forEach(function(x){ x.kills=(x.kills||[]).map(sw); });
+    state.roleRows.forEach(function(x){ x.claim=sw(x.claim); x.cc=sw(x.cc); });
+    state.chain.forEach(function(x){ x.checked=sw(x.checked); });
+    state.medicSaves.forEach(function(x){ x.who=sw(x.who); });
+    state.vigShots.forEach(function(x){ x.who=sw(x.who); });
+    state.mafiaTeam=state.mafiaTeam.map(sw);
+    state.links.forEach(function(x){ x.names=x.names.map(sw); });
+    if(highlightName===old) highlightName=nv;
+    p.name=nv;
+  }
+  recomputeDeaths(); save(); renderAll();
+}
 function setNote(id,v){ var p=byId(id); if(p){ p.note=v; save(); } }
 function clearNote(id){ var p=byId(id); if(p){ p.note=""; save(); renderRoster(); } }
 function clearAllNotes(){ if(!confirm("Clear the Notes column for every player?")) return; state.players.forEach(function(p){ p.note=""; }); save(); renderRoster(); }
@@ -666,7 +716,7 @@ function compileDay(day, clearNotes){
   });
   if (pl.length) parts.push("Reads & notes:\n"+pl.join("\n"));
   var dv = state.votes.filter(function(v){return v.day===day;});
-  if (dv.length) parts.push("Votes:\n"+dv.map(function(v){return "- "+v.type+" → "+v.target+(v.lynched?" (LYNCHED)":"")+" | for: "+(v.voters.join(", ")||"—");}).join("\n"));
+  if (dv.length) parts.push("Votes:\n"+dv.map(function(v){return "- "+v.type+" → "+v.target+(v.lynched?" (LYNCHED)":"")+" | for: "+(v.voters.join(", ")||"—")+((v.late&&v.late.length)?" | late: "+v.late.join(", "):"");}).join("\n"));
   if (parts.length){
     var ex = state.dayNotes[day].notes;
     state.dayNotes[day].notes = (ex?ex+"\n\n":"") + parts.join("\n\n");
@@ -689,23 +739,26 @@ function renderVoteUI(){
   Object.keys(voteChecks).forEach(function(n){ if(parts.indexOf(n)<0) delete voteChecks[n]; });
   var grid = document.getElementById("voterGrid");
   grid.innerHTML = parts.map(function(n){
-    var on = voteChecks[n];
-    var me = n==="Me" ? " me" : "";
-    return "<label class='voter"+(on?" on":"")+me+"'><input type='checkbox' "+(on?"checked":"")+" onchange='toggleVoter(\""+esc(n).replace(/\"/g,"&quot;")+"\",this.checked)'>"+esc(n)+"</label>";
+    var st = voteChecks[n];
+    var cls = (st===true?" on":st==="late"?" late":"") + (n==="Me"?" me":"");
+    return "<span class='voter"+cls+"' title='click: voted \u2192 late \u2192 no' onclick='cycleVoter(\""+esc(n).replace(/\"/g,"&quot;")+"\")'><span class='vbox'>"+(st===true?"\u2713":st==="late"?"L":"")+"</span>"+esc(n)+"</span>";
   }).join("");
   updateTally();
   updateSaveBtn();
 }
-function toggleVoter(name,on){ voteChecks[name]=on; renderVoteUI(); }
+function cycleVoter(name){ var s=voteChecks[name]; if(s===true) voteChecks[name]="late"; else if(s==="late") delete voteChecks[name]; else voteChecks[name]=true; renderVoteUI(); }
 function clearVoters(){ voteChecks={}; renderVoteUI(); }
 
 function updateTally(){
   var parts = votePanelParticipants();
-  var voted = parts.filter(function(n){return voteChecks[n];});
+  var voted = parts.filter(function(n){return voteChecks[n]===true;});
+  var late = parts.filter(function(n){return voteChecks[n]==="late";});
   var no = parts.filter(function(n){return !voteChecks[n];});
   document.getElementById("t-voted-n").textContent = voted.length;
+  document.getElementById("t-late-n").textContent = late.length;
   document.getElementById("t-novote-n").textContent = no.length;
   document.getElementById("t-voted").innerHTML = voted.length ? voted.map(function(n){return "<span class='pill'>"+esc(n)+"</span>";}).join("") : "—";
+  document.getElementById("t-late").innerHTML = late.length ? late.map(function(n){return "<span class='pill'>"+esc(n)+"</span>";}).join("") : "—";
   document.getElementById("t-novote").innerHTML = no.length ? no.map(function(n){return "<span class='pill'>"+esc(n)+"</span>";}).join("") : "—";
   var maj = Math.floor(parts.length/2)+1;
   var hit = voted.length>=maj;
@@ -718,11 +771,12 @@ function saveVote(){
   var day = parseInt(document.getElementById("vote-day").value);
   if (!target){ alert("Pick a target for the vote."); return; }
   var parts = votePanelParticipants();
-  var voters = parts.filter(function(n){return voteChecks[n];});
+  var voters = parts.filter(function(n){return voteChecks[n]===true;});
+  var late = parts.filter(function(n){return voteChecks[n]==="late";});
   var no = parts.filter(function(n){return !voteChecks[n];});
   var maj = Math.floor(parts.length/2)+1;
   var lynched = target!=="SLEEP" && voters.length>=maj;
-  var rec = { day:day, type:type, target:target, voters:voters, nonVoters:no, lynched:lynched, maj:maj };
+  var rec = { day:day, type:type, target:target, voters:voters, late:late, nonVoters:no, lynched:lynched, maj:maj };
   if (editingVote!=null){ state.votes[editingVote]=rec; editingVote=null; }
   else state.votes.push(rec);
   recomputeDeaths();
@@ -735,7 +789,7 @@ function editVote(i){
   editingVote=i;
   document.getElementById("vote-type").value=v.type;
   voteDay = v.day; document.getElementById("vote-day").value=v.day;
-  voteChecks={}; v.voters.forEach(function(n){ voteChecks[n]=true; });
+  voteChecks={}; v.voters.forEach(function(n){ voteChecks[n]=true; }); (v.late||[]).forEach(function(n){ voteChecks[n]="late"; });
   renderVoteUI();
   document.getElementById("vote-target").value=v.target;
 }
@@ -774,10 +828,10 @@ function hoverHTML(p){
   }
   var byDay = {};
   state.votes.forEach(function(v){
-    var inV=v.voters.indexOf(p.name)>=0, inN=v.nonVoters.indexOf(p.name)>=0;
-    if(!inV && !inN) return;
+    var inV=v.voters.indexOf(p.name)>=0, inL=(v.late||[]).indexOf(p.name)>=0, inN=v.nonVoters.indexOf(p.name)>=0;
+    if(!inV && !inL && !inN) return;
     if(!byDay[v.day]) byDay[v.day]={voted:[],no:[]};
-    (inV?byDay[v.day].voted:byDay[v.day].no).push(v.target);
+    (inV||inL ? byDay[v.day].voted : byDay[v.day].no).push(v.target+(inL?" (late)":""));
   });
   var dks = Object.keys(byDay).sort(function(a,b){return a-b;});
   if(dks.length){
@@ -788,6 +842,8 @@ function hoverHTML(p){
     });
     h += "</table>";
   }
+  var lk=state.links.filter(function(l){return l.names.indexOf(p.name)>=0;}).map(function(l){ return (l.kind==="apart"?"not with ":"team with ")+(l.names.filter(function(n){return n!==p.name;}).join(", ")||"?"); });
+  if(lk.length) h += "<div class='hcrow'><b>Links:</b> "+lk.map(esc).join(" \u00b7 ")+"</div>";
   if(p.note && p.note.trim()) h += "<div class='hcrow'><b>Note:</b> "+esc(p.note)+"</div>";
   return h;
 }
@@ -804,7 +860,7 @@ function showHover(e,id){
 function hideHover(){ var c=document.getElementById("hoverCard"); if(c) c.style.display="none"; }
 function votePill(n){
   var p = state.players.filter(function(x){return x.name===n;})[0];
-  var rd = p ? (p.reads[latestDay()]||"?") : "";
+  var rd = (n==="Me" || (p && p.id===state.meId)) ? "T!" : (p ? (p.reads[latestDay()]||"?") : "");
   var tag = (rd && rd!=="?") ? (" <span class='rtag "+READ_CLASS[rd]+"'>"+esc(rd)+"</span>") : "";
   var nm = esc(n).replace(/\"/g,"&quot;");
   return "<span class='pill' data-name='"+esc(n)+"' onclick='toggleHighlight(\""+nm+"\")'>"+esc(n)+tag+"</span>";
@@ -817,6 +873,7 @@ function renderVoteLog(){
       "<div class='vh'><div><span class='vtype'>"+esc(v.type)+" · D"+v.day+"</span> → <b class='vtarget' data-name='"+esc(v.target)+"' onclick='toggleHighlight(\""+esc(v.target).replace(/\"/g,"&quot;")+"\")'>"+esc(v.target)+"</b> "+(v.lynched?"<span class='badge'>LYNCHED</span>":"")+"</div>"+
       "<div class='row'><input type='checkbox' title='tick to compare' "+(compareSel[idx]?"checked":"")+" onchange='toggleCompare("+idx+",this.checked)' style='margin-right:4px;'><button class='sm' style='padding:1px 7px;' onclick='editVote("+idx+")'>✎</button><button class='danger sm' style='padding:1px 7px;' onclick='delVote("+idx+")'>✕</button></div></div>"+
       "<div class='small' style='margin-top:4px;'><b>Voted ("+v.voters.length+"/"+v.maj+"):</b> "+(v.voters.length?v.voters.map(votePill).join(""):"—")+"</div>"+
+      ((v.late&&v.late.length) ? "<div class='small'><b>Late ("+v.late.length+"):</b> "+v.late.map(votePill).join("")+"</div>" : "")+
       "<div class='small'><b>Did not ("+v.nonVoters.length+"):</b> "+(v.nonVoters.length?v.nonVoters.map(votePill).join(""):"—")+"</div>"+
       "</div>";
   }).join("");
@@ -953,6 +1010,7 @@ function renderAll(){
   renderMedic();
   renderVig();
   renderMafia();
+  renderLinks();
   updateRolePanels();
   updateState();
 }
@@ -983,11 +1041,18 @@ function buildMarkdown(){
     s+="\n";
   }
 
+  if (state.links.length){
+    s+="## Links\n\n";
+    state.links.forEach(function(l){ s+="- "+(l.kind==="apart"?"Not together":"Team")+": "+(l.names.join(", ")||"—")+"\n"; });
+    s+="\n";
+  }
+
   s+="## Votes\n\n";
   if (!state.votes.length) s+="_none_\n\n";
   else state.votes.forEach(function(v){
     s+="**"+v.type+" · D"+v.day+" → "+v.target+(v.lynched?" (LYNCHED)":"")+"**\n";
     s+="- Voted ("+v.voters.length+"/"+v.maj+"): "+(v.voters.join(", ")||"—")+"\n";
+    if (v.late && v.late.length) s+="- Late ("+v.late.length+"): "+v.late.join(", ")+"\n";
     s+="- Did not ("+v.nonVoters.length+"): "+(v.nonVoters.join(", ")||"—")+"\n\n";
   });
 
@@ -1056,17 +1121,18 @@ function flash(msg){
 }
 
 var GUIDE = [
- {sel:"#rosterTable", panel:true, title:"Roster & Reads", body:"Players are rows, days are columns. Click a cell to set your read (?, T, T!, M, M!, N, PR, 3P) - it auto-colors and carries forward to new days. \"Sort: by read\" groups the living by alignment (3P, then dead, sit at the bottom). Click a name to highlight that player everywhere (roster + all votes); hover a name for a details card (reads over time, claims, formals, voting record). The \"Clear notes\" button wipes the whole Notes column and \"Clear reads\" resets this day\u2019s reads to ?; the small x beside any single player\u2019s note clears just that one."},
- {sel:"#voterGrid", panel:true, title:"Vote Tracker", body:"Pick Type, target (any player, yourself, or SLEEP = no-lynch) and Day - it defaults to the current day. Tick who voted, or hit \"From screenshot\" to paste a Zoom grab (zoom in, scroll) and click everyone with a hand up. Majority updates live and a vote hitting it auto-lynches. The log shows each voter's current alignment as a colored chip; the pencil edits a past vote - even keeping players who have since died."},
+ {sel:"#rosterTable", panel:true, title:"Roster & Reads", body:"Players are rows, days are columns. Click a cell to set your read (?, T, T!, M, M!, N, PR, 3P) - it auto-colors and carries forward to new days. The Sort box orders the living by the latest read, entry order, name, a specific day\u2019s read, or your Links (3P, then dead, sit at the bottom). Click a name to highlight that player everywhere (roster + all votes); hover a name for a details card (reads over time, claims, formals, voting record). The \"Clear notes\" button wipes the whole Notes column and \"Clear reads\" resets this day\u2019s reads to ?; the small x beside any single player\u2019s note clears just that one."},
+ {sel:"#voterGrid", panel:true, title:"Vote Tracker", body:"Pick Type, target (any player, yourself, or SLEEP = no-lynch) and Day - it defaults to the current day. Click a name to cycle voted \u2192 late (voted after time, doesn\u2019t count) \u2192 no, or hit \"From screenshot\" to paste a Zoom grab (zoom in, scroll) and click everyone with a hand up. Majority updates live and a vote hitting it auto-lynches. The log shows each voter's current alignment as a colored chip; the pencil edits a past vote - even keeping players who have since died."},
  {sel:"#dayTabs", panel:true, title:"Day Notes", body:"One notes area per day. \"Compile + Day\" folds each player's read + note and that day's votes into the day log, then opens the next day - your reads carry forward and notes stay put."},
+ {sel:"#evalNotes", panel:true, title:"Running Eval", body:"Free space for your overall reads and theories across the whole game. Tip: click any panel's header to collapse it."},
  {sel:".statgrid", panel:true, title:"Game State", body:"Live alive / dead counts and the majority-to-lynch number. Set mafia-left and KP/night for a parity warning that flags LYLO / MYLO in red. Use \"I am\" to pick your nickname (you drop off the reads grid but still vote by name) and \"My role\" to set your role - the role panels below adapt to it."},
  {sel:"#rolesPanel", title:"Roles & Claims", body:"Track who claimed each role, any counter-claim (from the alive players), and a free notes line for what the role does. Standard games pre-fill Cop/Medic/Vig; Custom starts empty - add your own with \"+ role\"."},
+ {sel:"#linksPanel", title:"Links", body:"Group players you think are a team, or mark two who can\u2019t both be scum. Shows on the hover card and drives \u201cSort: links\u201d in the roster."},
  {sel:"#nightLog", panel:true, title:"Night / Kill Log", body:"Each night has a number (starts at N0) and as many kill slots as you need - pick victims from the alive list and they're marked dead automatically."},
  {sel:"#parityPanel", title:"Parity Cop Chain", body:"Shows only when your role is Parity Cop. Record who you checked and Same / Different versus your previous check."},
  {sel:"#medicPanel", title:"Medic Saves", body:"Shows when your role is Medic. Log who you saved each night."},
  {sel:"#vigPanel", title:"Vigilante Shots", body:"Shows when your role is Vigilante. Log your shot(s) and the result; add more with + Shot for multi-shot games."},
  {sel:"#mafiaPanel", title:"Mafia Team", body:"Shows when your role is Mafia. Add partners with + Partner - they get a red M before their name in the roster."},
- {sel:"#evalNotes", panel:true, title:"Running Eval", body:"Free space for your overall reads and theories across the whole game. Tip: click any panel's header to collapse it."},
  {sel:"#guideExportWrap", title:"Export & Save", body:"Export the whole game to Markdown or TXT (save dialog, download, or copy to clipboard). Everything autosaves to this browser automatically as you play."}
 ];
 var guideI = 0;
@@ -1211,6 +1277,24 @@ function renderMafia(){
 function addMate(){ state.mafiaTeam.push(""); save(); renderMafia(); }
 function setMate(i,v){ state.mafiaTeam[i]=v; save(); renderMafia(); renderRoster(); }
 function delMate(i){ state.mafiaTeam.splice(i,1); save(); renderMafia(); renderRoster(); }
+function renderLinks(){
+  var w=document.getElementById("linksList"); if(!w) return;
+  var all=state.players.map(function(p){return p.name;}); if(state.meId==null) all.push("Me");
+  w.innerHTML=state.links.map(function(l,i){
+    var free=all.filter(function(n){return l.names.indexOf(n)<0;});
+    return "<div class='lnk"+(l.kind==="apart"?" apart":"")+"'><div class='row' style='gap:5px;flex-wrap:nowrap;'>"+
+      "<select onchange='setLink("+i+",\"kind\",this.value)'><option value='team'"+(l.kind==="team"?" selected":"")+">Team</option><option value='apart'"+(l.kind==="apart"?" selected":"")+">Not together</option></select>"+
+      "<select onchange='addLinkName("+i+",this.value)' style='flex:1;min-width:0;'><option value=''>+ name</option>"+free.map(function(n){return "<option>"+esc(n)+"</option>";}).join("")+"</select>"+
+      "<button class='danger sm' onclick='delLink("+i+")'>\u2715</button></div>"+
+      "<div class='lnknames'>"+(l.names.map(function(n,j){ return "<span class='pill' data-name='"+esc(n)+"' onclick='toggleHighlight(\""+esc(n)+"\")'>"+esc(n)+" <button class='notex' onclick='event.stopPropagation();delLinkName("+i+","+j+")'>\u2715</button></span>"; }).join("")||"<span class='small'>pick names above</span>")+"</div></div>";
+  }).join("") || "<div class='small'>Team-ups and can\u2019t-be-together sets. Sort the roster by them with \u201cSort: links\u201d.</div>";
+  applyHighlight();
+}
+function addLink(){ state.links.push({kind:"team",names:[]}); save(); renderLinks(); }
+function setLink(i,k,v){ state.links[i][k]=v; save(); renderLinks(); renderRoster(); }
+function addLinkName(i,n){ if(!n) return; state.links[i].names.push(n); save(); renderLinks(); renderRoster(); }
+function delLinkName(i,j){ state.links[i].names.splice(j,1); save(); renderLinks(); renderRoster(); }
+function delLink(i){ state.links.splice(i,1); save(); renderLinks(); renderRoster(); }
 var compareSel = {};
 function toggleCompare(i,on){ compareSel[i]=on; updateCompareBtn(); }
 function updateCompareBtn(){ var n=Object.keys(compareSel).filter(function(k){return compareSel[k];}).length; var b=document.getElementById("cmpBtn"); if(b) b.textContent = n>=1 ? ("Compare ("+n+")") : "Compare"; }
@@ -1220,10 +1304,10 @@ function openCompare(){
   if (idxs.length<2){ alert("Tick at least 2 votes in the log to compare."); return; }
   var votes = idxs.map(function(i){return state.votes[i];});
   var names = {};
-  votes.forEach(function(v){ v.voters.concat(v.nonVoters).forEach(function(n){ names[n]=true; }); });
+  votes.forEach(function(v){ v.voters.concat(v.late||[], v.nonVoters).forEach(function(n){ names[n]=true; }); });
   var rows = Object.keys(names).map(function(n){
-    var pat = votes.map(function(v){ return v.voters.indexOf(n)>=0 ? "V" : (v.nonVoters.indexOf(n)>=0 ? "N" : "-"); });
-    var vp=[], present=0; pat.forEach(function(c,i){ if(c!=="-") present++; if(c==="V") vp.push(i+1); });
+    var pat = votes.map(function(v){ return v.voters.indexOf(n)>=0 ? "V" : ((v.late||[]).indexOf(n)>=0 ? "L" : (v.nonVoters.indexOf(n)>=0 ? "N" : "-")); });
+    var vp=[], present=0; pat.forEach(function(c,i){ if(c!=="-") present++; if(c==="V"||c==="L") vp.push(i+1); });
     var mean = vp.length ? vp.reduce(function(a,b){return a+b;},0)/vp.length : Infinity;
     return { name:n, pat:pat, mean:mean, vc:vp.length, present:present };
   });
@@ -1231,7 +1315,7 @@ function openCompare(){
   var head = "<tr><th>Player</th>"+votes.map(function(v){ return "<th>D"+v.day+" "+esc(v.type)+"<br>&rarr; "+esc(v.target)+"</th>"; }).join("")+"<th>V</th></tr>";
   var body = rows.map(function(r){
     var cls = r.vc===r.present && r.vc>0 ? " class='allV'" : (r.vc===0 ? " class='noV'" : "");
-    var cells = r.pat.map(function(c){ return c==="V" ? "<td class='cV'>V</td>" : (c==="N" ? "<td class='cN'>N</td>" : "<td class='cDash'>&middot;</td>"); }).join("");
+    var cells = r.pat.map(function(c){ return c==="V" ? "<td class='cV'>V</td>" : (c==="L" ? "<td class='cL'>L</td>" : (c==="N" ? "<td class='cN'>N</td>" : "<td class='cDash'>&middot;</td>")); }).join("");
     return "<tr"+cls+"><td>"+esc(r.name)+"</td>"+cells+"<td>"+r.vc+"/"+r.present+"</td></tr>";
   }).join("");
   document.getElementById("cmpBody").innerHTML = "<table class='cmptbl'><thead>"+head+"</thead><tbody>"+body+"</tbody></table>";
