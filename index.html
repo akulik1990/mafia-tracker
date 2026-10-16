@@ -13,6 +13,15 @@
     --mafia:#7a2e2e; --mafia-hard:#e0483f; --neutral:#8a6d2f; --pr:#3a5bbf; --tp:#9b59b6;
     --warn:#e0483f; --ok:#3fbf5f;
   }
+  :root[data-theme="dracula"] { --bg:#21222c; --panel:#282a36; --panel2:#343746; --border:#44475a; --text:#f8f8f2; --muted:#6272a4; --accent:#bd93f9; }
+  :root[data-theme="catppuccin"] { --bg:#181825; --panel:#1e1e2e; --panel2:#313244; --border:#45475a; --text:#cdd6f4; --muted:#a6adc8; --accent:#cba6f7; }
+  :root[data-theme="nord"] { --bg:#21262f; --panel:#2b313c; --panel2:#373f4d; --border:#4c566a; --text:#eceff4; --muted:#9aa8bf; --accent:#88c0d0; }
+  :root[data-theme="tokyonight"] { --bg:#16161e; --panel:#1a1b26; --panel2:#292e42; --border:#3b4261; --text:#c0caf5; --muted:#565f89; --accent:#7aa2f7; }
+  :root[data-theme="kanagawa"] { --bg:#16161d; --panel:#1f1f28; --panel2:#2a2a37; --border:#363646; --text:#dcd7ba; --muted:#727169; --accent:#e6c384; }
+  :root[data-theme="moss"] { --bg:#12150c; --panel:#1a1f10; --panel2:#242b16; --border:#53652a; --text:#e6e8d8; --muted:#8a9370; --accent:#9fb275; }
+  :root[data-theme="fern"] { --bg:#131417; --panel:#1a1c21; --panel2:#23262d; --border:#53652a; --text:#dfe2e6; --muted:#8b9199; --accent:#9fb275; }
+  :root[data-theme="lichen"] { --bg:#171512; --panel:#201c18; --panel2:#2a2620; --border:#53652a; --text:#eae4d6; --muted:#9a9180; --accent:#9fb275; }
+  :root[data-theme="meadow"] { --bg:#f1efe7; --panel:#faf9f4; --panel2:#e7e4d8; --border:#9fb275; --text:#26231c; --muted:#7a7767; --accent:#53652a; --null:#d8d4c6; }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--text);
     font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
@@ -58,7 +67,7 @@
   table.grid th.note-col, table.grid td.note-col { text-align:left; min-width:140px; }
   table.grid tr.dead td.name-col input { color:var(--warn); }
   table.grid tr.dead td.statuscell { color:var(--warn); font-weight:700; }
-  table.grid tr.deadsep td { background:#0f1115; color:var(--muted); font-weight:700; letter-spacing:.22em; text-align:center; font-size:11px; padding:5px; border-top:2px solid var(--border); border-bottom:1px solid var(--border); }
+  table.grid tr.deadsep td { background:var(--panel2); color:var(--muted); font-weight:700; letter-spacing:.22em; text-align:center; font-size:11px; padding:5px; border-top:2px solid var(--border); border-bottom:1px solid var(--border); }
   td.read { padding:0; width:46px; }
   .rsel { width:100%; height:30px; border:none; background:transparent; color:inherit;
     font-weight:700; font-size:12px; text-align:center; text-align-last:center;
@@ -98,7 +107,7 @@
   .voter:hover { border-color:var(--accent); }
   .voter.on { background:var(--panel2); border-color:var(--accent); }
   .voter.me { border-style:dashed; }
-  .voter.late { border-color:var(--neutral); background:#2a2416; }
+  .voter.late { border-color:var(--neutral); }
   .vbox { display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; border:1px solid var(--border); border-radius:3px; font-size:10px; font-weight:700; flex:none; }
   .voter.on .vbox { background:var(--accent); border-color:var(--accent); color:#fff; }
   .voter.late .vbox { background:var(--neutral); border-color:var(--neutral); color:#1f1607; }
@@ -184,6 +193,16 @@
   .cmptbl tr.noV { opacity:.62; }
   .cmpv { display:inline-block; background:var(--town); color:#fff; font-weight:700; border-radius:3px; padding:0 5px; }
   .cmpn { display:inline-block; color:var(--muted); }
+  #ctx { position:fixed; z-index:400; background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:4px; min-width:180px; box-shadow:0 10px 30px rgba(0,0,0,.5); font-size:12px; }
+  #ctx .ch { padding:5px 10px 2px; color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.06em; }
+  #ctx .ci { padding:5px 10px; cursor:pointer; border-radius:5px; white-space:nowrap; }
+  #ctx .ci:hover { background:var(--panel2); }
+  #ctx .cr { display:flex; gap:3px; padding:3px 8px 5px; }
+  #ctx .cr span { cursor:pointer; padding:1px 6px; border-radius:3px; font-weight:700; font-size:10px; }
+  #ctx hr { border:none; border-top:1px solid var(--border); margin:3px 0; }
+  .setgrid { display:grid; grid-template-columns:1fr 1fr; gap:14px 24px; margin-top:10px; }
+  .setgrid h3 { margin:0 0 6px; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  .setgrid label.chk { display:flex; align-items:center; gap:7px; padding:3px 0; font-size:13px; cursor:pointer; }
   .vimask { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:250; display:flex; align-items:center; justify-content:center; }
   .vibox { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; width:min(1320px,96vw); max-height:94vh; overflow:auto; }
   .vigrid { display:grid; grid-template-columns:1fr 320px; gap:14px; margin-top:12px; }
@@ -268,6 +287,7 @@
       <div id="parityNote" class="tnote"></div>
     </div>
     <div class="spacer"></div>
+    <button id="settingsBtn" onclick="openSettings()" title="Theme, panels, options">&#9881; Settings</button>
     <button onclick="startGuide()" title="Guided tour of each area">&#10067; Guide</button>
     <select id="guideExportWrap" onchange="exportMenu(this)" style="padding:4px 6px;font-size:12px;">
       <option value="">Export &#9662;</option>
@@ -305,7 +325,7 @@
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel" id="votePanel">
         <h2>Vote Tracker</h2>
         <div class="row mb">
           <label class="fld">Type
@@ -339,7 +359,7 @@
         <div class="votelog" id="voteLog" style="margin-top:8px;"></div>
       </div>
 
-      <div class="panel">
+      <div class="panel" id="dayPanel">
         <h2>Day Notes</h2>
         <div class="daytabs" id="dayTabs"></div>
         <div id="dayNotesArea"></div>
@@ -347,7 +367,7 @@
     </div>
 
     <div class="col-side">
-      <div class="panel">
+      <div class="panel" id="evalPanel">
         <h2>Running Eval</h2>
         <textarea id="evalNotes" rows="6" placeholder="Town core / mafia reads / unsolved..." oninput="state.eval=this.value; save();"></textarea>
       </div>
@@ -368,7 +388,7 @@
         <div id="linksList" style="margin-top:8px;"></div>
       </div>
 
-      <div class="panel">
+      <div class="panel" id="nightPanel">
         <h2>Night / Kill Log <span class="small">(auto-marks dead)</span></h2>
         <div id="nightLog"></div>
         <button class="sm" onclick="addNight()" style="margin-top:4px;">+ Night</button>
@@ -417,6 +437,17 @@
     </div>
   </div>
 
+  <div id="settingsModal" class="vimask hide">
+    <div class="vibox" style="width:min(640px,95vw);">
+      <div class="row" style="justify-content:space-between;">
+        <h2 style="margin:0;">Settings</h2>
+        <button class="sm" onclick="closeSettings()">&#10005;</button>
+      </div>
+      <div class="setgrid" id="setBody"></div>
+      <div class="small" style="margin-top:12px;">Settings are per browser, not per game.</div>
+    </div>
+  </div>
+
   <div id="voteImport" class="vimask hide">
     <div class="vibox">
       <div class="row" style="justify-content:space-between;">
@@ -453,6 +484,27 @@ var STD_ROLES = ["Vanilla Town","Parity Cop","Nerfed Medic","Vigilante","Mafia"]
 var READ_CLASS = {"?":"r-null","T":"r-T","T!":"r-Th","M":"r-M","M!":"r-Mh","N":"r-N","PR":"r-PR","3P":"r-TP"};
 var RANK = {"PR":0,"T!":1,"T":2,"N":3,"M":4,"M!":5,"?":6,"3P":7};
 
+var PREFS_KEY = "mafia-tracker-prefs";
+var THEMES = ["default","moss","fern","lichen","meadow","dracula","catppuccin","nord","tokyonight","kanagawa"];
+var PANELS = [["votePanel","Vote Tracker"],["dayPanel","Day Notes"],["evalPanel","Running Eval"],["rolesPanel","Roles & Claims"],["linksPanel","Links"],["nightPanel","Night / Kill Log"]];
+var OPTS = [["lockedMe","Show me as locked town (T!) in votes"],["carryReads","Carry reads forward to new days"],["linkCols","With / Against columns in the roster"],["hover","Details card when hovering a name"],["confirms","Ask before clearing notes / reads / deleting votes"]];
+var prefs = { theme:"default", panels:{}, lockedMe:true, carryReads:true, linkCols:true, hover:true, confirms:true };
+function loadPrefs(){ try { var p=JSON.parse(localStorage.getItem(PREFS_KEY)); if(p) Object.keys(p).forEach(function(k){ prefs[k]=p[k]; }); } catch(e){} applyPrefs(); }
+function savePrefs(){ localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); applyPrefs(); }
+function applyPrefs(){
+  if (prefs.theme==="default") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", prefs.theme);
+  PANELS.forEach(function(pn){ var e=document.getElementById(pn[0]); if(e) e.classList.toggle("hide", prefs.panels[pn[0]]===false); });
+}
+function ask(msg){ return !prefs.confirms || confirm(msg); }
+function openSettings(){
+  var h="<div><h3>Theme</h3><select onchange='prefs.theme=this.value; savePrefs();'>"+THEMES.map(function(t){return "<option value='"+t+"'"+(t===prefs.theme?" selected":"")+">"+t+(t==="meadow"?" (light)":"")+"</option>";}).join("")+"</select>";
+  h+="<h3 style='margin-top:14px;'>Panels</h3>"+PANELS.map(function(pn){ return "<label class='chk'><input type='checkbox' "+(prefs.panels[pn[0]]===false?"":"checked")+" onchange='prefs.panels[\""+pn[0]+"\"]=this.checked; savePrefs();'>"+pn[1]+"</label>"; }).join("")+"</div>";
+  h+="<div><h3>Options</h3>"+OPTS.map(function(o){ return "<label class='chk'><input type='checkbox' "+(prefs[o[0]]?"checked":"")+" onchange='prefs[\""+o[0]+"\"]=this.checked; savePrefs(); renderAll();'>"+o[1]+"</label>"; }).join("")+"</div>";
+  document.getElementById("setBody").innerHTML=h;
+  document.getElementById("settingsModal").classList.remove("hide");
+}
+function closeSettings(){ document.getElementById("settingsModal").classList.add("hide"); }
+
 var state = null;
 var activeDayNotes = 1;
 var voteDay = 1;
@@ -464,6 +516,7 @@ function saveSilent(){ save(); updateState(); }
 function load(){ try { return JSON.parse(localStorage.getItem(LS_KEY)); } catch(e){ return null; } }
 
 window.addEventListener("load", function(){
+  loadPrefs();
   document.getElementById("su-date").value = new Date().toISOString().slice(0,10);
   onTypeChange();
   var s = load();
@@ -629,6 +682,7 @@ function updateSortBtn(){
 }
 
 function normalizeReads(){
+  if (!prefs.carryReads) return;
   var changed=false;
   state.players.forEach(function(p){
     var last;
@@ -648,7 +702,7 @@ function linkedTo(name, kind){
 function renderRoster(){
   normalizeReads();
   var t = document.getElementById("rosterTable");
-  var lk = state.links.length>0;
+  var lk = state.links.length>0 && prefs.linkCols;
   var html = "<thead><tr><th class='name-col'>Player</th>"+(lk?"<th>With</th><th>Against</th>":"");
   state.days.forEach(function(d){ html += "<th>D"+d+"</th>"; });
   html += "<th class='note-col'>Notes</th><th>Status</th></tr></thead><tbody>";
@@ -659,7 +713,7 @@ function renderRoster(){
     var dead = p.deadDay!==null;
     if (dead && !sepDone){ html += "<tr class='deadsep'><td colspan='"+(state.days.length+(lk?5:3))+"'>☠ DEAD ☠</td></tr>"; sepDone = true; }
     html += "<tr data-pname='"+esc(p.name)+"' class='"+(dead?"dead":"")+"'>";
-    html += "<td class='name-col' onmouseenter='showHover(event,"+p.id+")' onmouseleave='hideHover()'><div class='namewrap'>"+((isMaf && mafiaSet.indexOf(p.name)>=0)?"<span class='mteam'>M</span> ":"")+"<input value='"+esc(p.name)+"' title='click to highlight \u00b7 hover for details' onclick='toggleHighlightById("+p.id+")' onchange='renamePlayer("+p.id+",this.value)'></div></td>";
+    html += "<td class='name-col' onmouseenter='showHover(event,"+p.id+")' onmouseleave='hideHover()' oncontextmenu='return ctxMenu(event,"+p.id+")'><div class='namewrap'>"+((isMaf && mafiaSet.indexOf(p.name)>=0)?"<span class='mteam'>M</span> ":"")+"<input value='"+esc(p.name)+"' title='click to highlight \u00b7 hover for details' onclick='toggleHighlightById("+p.id+")' onchange='renamePlayer("+p.id+",this.value)'></div></td>";
     if (lk) html += "<td class='lnk-col'>"+(linkedTo(p.name,"team").map(esc).join(", ")||"")+"</td><td class='lnk-col against'>"+(linkedTo(p.name,"apart").map(esc).join(", ")||"")+"</td>";
     state.days.forEach(function(d){
       var r = p.reads[d]||"?";
@@ -697,8 +751,8 @@ function renamePlayer(id,v){
 }
 function setNote(id,v){ var p=byId(id); if(p){ p.note=v; save(); } }
 function clearNote(id){ var p=byId(id); if(p){ p.note=""; save(); renderRoster(); } }
-function clearAllNotes(){ if(!confirm("Clear the Notes column for every player?")) return; state.players.forEach(function(p){ p.note=""; }); save(); renderRoster(); }
-function clearCurrentReads(){ var d=curDay(); if(!confirm("Clear all reads for D"+d+" (set back to ?)")) return; state.players.forEach(function(p){ p.reads[d]="?"; }); save(); renderRoster(); }
+function clearAllNotes(){ if(!ask("Clear the Notes column for every player?")) return; state.players.forEach(function(p){ p.note=""; }); save(); renderRoster(); }
+function clearCurrentReads(){ var d=curDay(); if(!ask("Clear all reads for D"+d+" (set back to ?)")) return; state.players.forEach(function(p){ p.reads[d]="?"; }); save(); renderRoster(); }
 function setMe(v){ state.meId = (v===""?null:parseInt(v)); save(); renderAll(); }
 function syncSuMe(){
   var names=document.getElementById("su-players").value.split("\n").map(function(s){return s.trim();}).filter(Boolean);
@@ -811,8 +865,60 @@ function updateSaveBtn(){
   var b=document.getElementById("saveVoteBtn"); if(b) b.textContent=ed?"Update vote":"Save vote";
   var c=document.getElementById("cancelEditBtn"); if(c) c.classList.toggle("hide",!ed);
 }
-function delVote(i){ if(!confirm("Delete this saved vote?")) return; state.votes.splice(i,1); recomputeDeaths(); compareSel={}; save(); renderAll(); }
+function delVote(i){ if(!ask("Delete this saved vote?")) return; state.votes.splice(i,1); recomputeDeaths(); compareSel={}; save(); renderAll(); }
 
+function ctxMenu(e,id){
+  e.preventDefault(); hideHover();
+  var p=byId(id); if(!p) return false;
+  var c=document.getElementById("ctx");
+  if(!c){ c=document.createElement("div"); c.id="ctx"; document.body.appendChild(c); }
+  var dead=p.deadDay!==null, d=curDay(), cur=p.reads[d]||"?";
+  var h="<div class='ch'>"+esc(p.name)+"</div>";
+  if(!dead){
+    var ln=state.nights.length?state.nights[state.nights.length-1].n:0;
+    h+="<div class='ci' onclick='ctxKill("+id+")'>\u2620 Night kill (N"+ln+")</div>";
+    h+="<div class='ci' onclick='ctxVote("+id+",\"Formal\")'>Formal on them</div><div class='ci' onclick='ctxVote("+id+",\"EOD\")'>EOD vote on them</div><div class='ci' onclick='ctxVote("+id+",\"GTD\")'>GTD on them</div><div class='ci' onclick='ctxVote("+id+",\"RNG\")'>RNG on them</div><hr>";
+  }
+  h+="<div class='ch'>Read D"+d+"</div><div class='cr'>"+(state.custom?READS:READS.filter(function(o){return o!=="3P";})).map(function(o){ return "<span class='"+READ_CLASS[o]+"'"+(o===cur?" style='outline:2px solid var(--accent)'":"")+" onclick='setRead("+id+","+d+",\""+o+"\"); hideCtx();'>"+o+"</span>"; }).join("")+"</div>";
+  if(state.roleRows.length){ h+="<div class='ch'>Claims</div>"+state.roleRows.map(function(r,i){ return "<div class='ci' onclick='ctxClaim("+id+","+i+")'>"+(r.claim===p.name?"\u2713 ":"")+esc(r.name||"role "+(i+1))+"</div>"; }).join(""); }
+  h+="<hr><div class='ci' onclick='ctxLink("+id+",\"team\")'>New team link</div><div class='ci' onclick='ctxLink("+id+",\"apart\")'>New not-together link</div>";
+  h+="<div class='ci' onclick='ctxRename("+id+")'>Rename</div>";
+  c.innerHTML=h; c.style.display="block";
+  var x=e.clientX, y=e.clientY, w=c.offsetWidth, hh=c.offsetHeight;
+  if(x+w>window.innerWidth-8) x=window.innerWidth-w-8;
+  if(y+hh>window.innerHeight-8) y=Math.max(8, window.innerHeight-hh-8);
+  c.style.left=x+"px"; c.style.top=y+"px";
+  return false;
+}
+function hideCtx(){ var c=document.getElementById("ctx"); if(c) c.style.display="none"; }
+document.addEventListener("click", hideCtx);
+document.addEventListener("keydown", function(e){ if(e.key==="Escape"){ hideCtx(); closeSettings(); } });
+function ctxKill(id){
+  var p=byId(id); if(!p) return;
+  if(!state.nights.length) addNight();
+  var nl=state.nights[state.nights.length-1]; nl.kills=(nl.kills||[]).filter(Boolean); nl.kills.push(p.name);
+  recomputeDeaths(); save(); renderAll(); hideCtx();
+}
+function ctxVote(id,type){
+  var p=byId(id); if(!p) return;
+  editingVote=null; voteChecks={}; voteDay=curDay(); renderVoteUI();
+  document.getElementById("vote-type").value=type; document.getElementById("vote-target").value=p.name;
+  hideCtx(); document.getElementById("votePanel").scrollIntoView({block:"start",behavior:"smooth"});
+}
+function ctxClaim(id,i){
+  var p=byId(id), r=state.roleRows[i]; if(!p||!r) return;
+  r.claim = r.claim===p.name ? "" : p.name;
+  if(r.claim) p.reads[curDay()]="PR";
+  save(); renderRoles(); renderRoster(); renderVoteLog(); hideCtx();
+}
+function ctxLink(id,kind){
+  var p=byId(id); if(!p) return;
+  state.links.push({kind:kind,names:[p.name]}); save(); renderLinks(); renderRoster(); hideCtx();
+  document.getElementById("linksPanel").scrollIntoView({block:"start",behavior:"smooth"});
+}
+function ctxRename(id){
+  hideCtx(); var tr=document.querySelector("#rosterTable tr[data-pname='"+(byId(id)||{}).name+"'] .name-col input"); if(tr){ tr.focus(); tr.select(); }
+}
 var highlightName = null;
 function toggleHighlight(name){ highlightName = (highlightName===name ? null : name); applyHighlight(); }
 function toggleHighlightById(id){ var p=byId(id); if(p) toggleHighlight(p.name); }
@@ -860,7 +966,7 @@ function hoverHTML(p){
   return h;
 }
 function showHover(e,id){
-  var p=byId(id); if(!p) return;
+  var p=byId(id); if(!p || !prefs.hover) return;
   var c=document.getElementById("hoverCard");
   if(!c){ c=document.createElement("div"); c.id="hoverCard"; document.body.appendChild(c); }
   c.innerHTML=hoverHTML(p); c.style.display="block";
@@ -872,7 +978,7 @@ function showHover(e,id){
 function hideHover(){ var c=document.getElementById("hoverCard"); if(c) c.style.display="none"; }
 function votePill(n){
   var p = state.players.filter(function(x){return x.name===n;})[0];
-  var rd = (n==="Me" || (p && p.id===state.meId)) ? "T!" : (p ? (p.reads[latestDay()]||"?") : "");
+  var rd = (prefs.lockedMe && (n==="Me" || (p && p.id===state.meId))) ? "T!" : (p ? (p.reads[latestDay()]||"?") : "");
   var tag = (rd && rd!=="?") ? (" <span class='rtag "+READ_CLASS[rd]+"'>"+esc(rd)+"</span>") : "";
   var nm = esc(n).replace(/\"/g,"&quot;");
   return "<span class='pill' data-name='"+esc(n)+"' onclick='toggleHighlight(\""+nm+"\")'>"+esc(n)+tag+"</span>";
@@ -1132,7 +1238,7 @@ function flash(msg){
 }
 
 var GUIDE = [
- {sel:"#rosterTable", panel:true, title:"Roster & Reads", body:"Players are rows, days are columns. Click a cell to set your read (?, T, T!, M, M!, N, PR, 3P) - it auto-colors and carries forward to new days. The Sort box orders the living by the latest read, entry order, name, a specific day\u2019s read, or your Links (3P, then dead, sit at the bottom). Click a name to highlight that player everywhere (roster + all votes); hover a name for a details card (reads over time, claims, formals, voting record). The \"Clear notes\" button wipes the whole Notes column and \"Clear reads\" resets this day\u2019s reads to ?; the small x beside any single player\u2019s note clears just that one."},
+ {sel:"#rosterTable", panel:true, title:"Roster & Reads", body:"Players are rows, days are columns. Click a cell to set your read (?, T, T!, M, M!, N, PR, 3P) - it auto-colors and carries forward to new days. The Sort box orders the living by the latest read, entry order, name, a specific day\u2019s read, or your Links (3P, then dead, sit at the bottom). Click a name to highlight that player everywhere (roster + all votes); right-click it for quick actions (night kill, start a vote on them, set the read, mark a claim, start a link, rename); hover for a details card (reads over time, claims, formals, voting record). The \"Clear notes\" button wipes the whole Notes column and \"Clear reads\" resets this day\u2019s reads to ?; the small x beside any single player\u2019s note clears just that one."},
  {sel:"#voterGrid", panel:true, title:"Vote Tracker", body:"Pick Type, target (any player, yourself, or SLEEP = no-lynch) and Day - it defaults to the current day. Click a name to cycle voted \u2192 late (voted after time, doesn\u2019t count) \u2192 no, or hit \"From screenshot\" to paste a Zoom grab (zoom in, scroll) and click everyone with a hand up (click twice for a late vote). Majority updates live and a vote hitting it auto-lynches. The log shows each voter's current alignment as a colored chip; the pencil edits a past vote - even keeping players who have since died."},
  {sel:"#dayTabs", panel:true, title:"Day Notes", body:"One notes area per day. \"Compile + Day\" folds each player's read + note and that day's votes into the day log, then opens the next day - your reads carry forward and notes stay put."},
  {sel:"#evalNotes", panel:true, title:"Running Eval", body:"Free space for your overall reads and theories across the whole game. Tip: click any panel's header to collapse it."},
@@ -1145,6 +1251,7 @@ var GUIDE = [
  {sel:"#medicPanel", title:"Medic Saves", body:"Shows when your role is Medic. Log who you saved each night."},
  {sel:"#vigPanel", title:"Vigilante Shots", body:"Shows when your role is Vigilante. Log your shot(s) and the result; add more with + Shot for multi-shot games."},
  {sel:"#mafiaPanel", title:"Mafia Team", body:"Shows when your role is Mafia. Add partners with + Partner - they get a red M before their name in the roster."},
+ {sel:"#settingsBtn", title:"Settings", body:"Theme (the mod console palettes plus the original), which panels to show, and a few options like showing yourself as locked town in votes or carrying reads forward. Saved per browser."},
  {sel:"#guideExportWrap", title:"Export & Save", body:"Export the whole game to Markdown or TXT, or copy the Markdown to the clipboard, from this menu. Everything autosaves to this browser automatically as you play."}
 ];
 var guideI = 0;
